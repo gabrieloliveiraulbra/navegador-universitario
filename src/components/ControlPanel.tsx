@@ -11,7 +11,7 @@ interface ControlPanelProps {
   isFinished: boolean;
   currentStep: number;
   totalSteps: number;
-  canStep: boolean;
+
   onAlgorithmChange: (id: AlgorithmId) => void;
   onStartChange: (id: string) => void;
   onEndChange: (id: string) => void;
@@ -42,7 +42,7 @@ export function ControlPanel({
   isFinished,
   currentStep,
   totalSteps,
-  canStep,
+
   onAlgorithmChange,
   onStartChange,
   onEndChange,

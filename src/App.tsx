@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { AlgorithmId, NodeState, EdgeState, SearchResult } from './types';
 import { CAMPUS_GRAPH } from './data/campusData';
 import { runBFS, runDFS, runDijkstra, runAStar } from './algorithms/searchAlgorithms';
@@ -32,7 +32,6 @@ export default function App() {
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [logs, setLogs] = useState<string[]>([]);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -60,15 +59,14 @@ export default function App() {
     }
     setSearchResult(result);
     setCurrentStep(0);
-    setLogs([]);
+
     setIsPlaying(false);
   }, [algorithmId, startId, endId]);
 
-  // ── Sync logs with current step ────────────────────────────────────────────
-  useEffect(() => {
-    if (!searchResult) return;
+  const logs = useMemo(() => {
+    if (!searchResult) return [];
     const upTo = Math.min(currentStep, searchResult.steps.length - 1);
-    setLogs(searchResult.steps.slice(0, upTo + 1).map((s) => s.logMessage));
+    return searchResult.steps.slice(0, upTo + 1).map((s) => s.logMessage);
   }, [currentStep, searchResult]);
 
   // ── Auto-play interval ─────────────────────────────────────────────────────
@@ -93,19 +91,9 @@ export default function App() {
     };
   }, [isPlaying, speed, searchResult]);
 
-  // ── Reset when algorithm / start / end changes ─────────────────────────────
-  useEffect(() => {
-    setSearchResult(null);
-    setCurrentStep(0);
-    setLogs([]);
-    setIsPlaying(false);
-  }, [algorithmId, startId, endId]);
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
-  const handlePlay = () => {
-    if (!searchResult) runAlgorithm();
-    else setIsPlaying(true);
-  };
+
+
 
   // If already have result and press Play, just resume
   const handlePlayWrapper = () => {
@@ -121,7 +109,7 @@ export default function App() {
       }
       setSearchResult(result);
       setCurrentStep(0);
-      setLogs([]);
+
       setIsPlaying(true);
     } else {
       setIsPlaying(true);
@@ -138,23 +126,37 @@ export default function App() {
     setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
   };
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setSearchResult(null);
     setCurrentStep(0);
-    setLogs([]);
     setIsPlaying(false);
+  }, []);
+
+  const changeAlgorithm = (id: AlgorithmId) => {
+    setAlgorithmId(id);
+    handleReset();
+  };
+
+  const changeStart = (id: string) => {
+    setStartId(id);
+    handleReset();
+  };
+
+  const changeEnd = (id: string) => {
+    setEndId(id);
+    handleReset();
   };
 
   const handleNodeClick = (id: string) => {
     if (clickMode === 'start') {
       // Don't re-select the same start
       if (id === startId) return;
-      setStartId(id);
+      changeStart(id);
       setClickMode('end');
     } else {
       // Don't re-select the same end, and don't pick the current start
       if (id === endId || id === startId) return;
-      setEndId(id);
+      changeEnd(id);
       setClickMode('start');
     }
   };
@@ -181,10 +183,9 @@ export default function App() {
         isFinished={isFinished}
         currentStep={currentStep}
         totalSteps={totalSteps}
-        canStep={!isPlaying}
-        onAlgorithmChange={setAlgorithmId}
-        onStartChange={setStartId}
-        onEndChange={setEndId}
+        onAlgorithmChange={changeAlgorithm}
+        onStartChange={changeStart}
+        onEndChange={changeEnd}
         onSpeedChange={setSpeed}
         onPlay={handlePlayWrapper}
         onPause={handlePause}
