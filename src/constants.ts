@@ -1,4 +1,4 @@
-import { NodeState } from './types';
+import type { NodeState } from './types';
 
 export const NODE_STATE_COLORS: Record<NodeState, { bg: string; ring: string; icon: string }> = {
   unvisited: { bg: '#1e2535', ring: '#2a3347', icon: '#8892a4' },
